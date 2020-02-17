@@ -14,20 +14,33 @@ var rl = readline.createInterface({
 });
 var client = new twilio(accountSid, authToken);
 
-//Function to ask the phone number and send the verification token
-var startVerification = function (){
+//Function to ask the phone number and look up if it's mobile
+var lookupPhoneNumber = function(){
+
 	//Ask for the phone number to verify
-	rl.question("Please insert the phone number you want to verify: ", (phoneNumber) => {
+	rl.question("Please insert the phone number you want to verify: ", (phoneNumber) =>{
+			//Lookup if the phone number is mobile
+				client.lookups.phoneNumbers(phoneNumber)
+				.fetch({type: ['carrier']})
+		              .catch(error => console.log(error))
+		              .then(phone_number => startVerification(phone_number.carrier.type, phoneNumber));
+	});	
+}
+
+//Function to ask the phone number and send the verification token
+var startVerification = function (type, phoneNumber){
+	//Check if the phone number is mobile or not
+	if(type === "mobile"){
 		//Send a verification token
 		client.verify.services(serviceId)
 	             .verifications
 	             .create({to: phoneNumber, channel: 'sms'})
 	             .then(_ => checkVerification(phoneNumber))
 	             .catch(error => console.error(error));
-
-		
-	});
-};
+	} else{
+		console.log("Emmm...ლ(ಠ_ಠლ) that's not a mobile number");
+		lookupPhoneNumber();
+	}}
 
 //Function to ask the verification token and verify
 var checkVerification = function (phoneNumber, attempt){
@@ -58,4 +71,4 @@ var checkVerification = function (phoneNumber, attempt){
 	});
 };
 
-startVerification();
+lookupPhoneNumber();
